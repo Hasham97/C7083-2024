@@ -1,0 +1,310 @@
+---
+title: "A Visual Essay and Data Visualization Critique"
+author: "Hasham Khan"
+format: pdf
+editor: visual
+---
+
+GitHub repo link: <https://github.com/Hasham97/C7083_-_2024.git>
+
+## Introduction
+
+My data is based on a dataset which contains information regarding honey bee colonies in terms of number of colonies, maximum colonies, colonies lost, percentage of colonies lost, colonies added, renovated colonies, and percent colonies renovated in 47 different states of USA and USA overall. The data for operations with honey bee colonies were collected from a stratified sample of operations that responded as having honey bees on the Bee and Honey Inquiry and from the NASS list frame \[*United States honey bee colony losses 2020-2021: Preliminary results* (June, 2021)\]. Let's do some visualizations and try to paint a picture of the key trends and insights in the data to form it into a visual essay.
+
+### Package installation and loading the package
+
+First of all, we need to install the tidyverse package. Then we need to set the working directory to where the dataset is and load it into R.
+
+```{r}
+# Check whether a package is installed and install if not.
+# This will also load the package if already installed!
+if(!require("tidyverse")) install.packages("tidyverse")
+```
+
+```{r}
+library(tidyverse) # This will confirm that you have loaded the package
+```
+
+### Setting the working directory
+
+```{r}
+# Check the working directory
+getwd()
+```
+
+The working directory is already set to where my data set is. Let's load it.
+
+```{r}
+bee_colony <- read.csv("colony.csv")
+```
+
+### Summary of the data
+
+```{r}
+# Let's look at a summary of our original data frame
+summary(bee_colony)
+```
+
+So our dataset contains information regarding 3181180 colonies with 10 variables.
+
+### Elimination of NA values
+
+There are plenty of NA values in the data, which might cause some issues, so let's remove those.
+
+```{r}
+bee_colony <- na.omit(bee_colony)
+
+# Display the new dataset summary without the NA values
+head(bee_colony)
+summary(bee_colony)
+```
+
+When you remove the NA values, it shows the correct number of colonies i.e. 1440000. The dataset contains information for different states. Let's start with basics and look at a specific state.
+
+## Visualization 1: Base R Plot
+
+We'll create a simple line chart to visualize the overall trend in the number of colonies over the years for the state of California
+
+```{r}
+# Assigning a dataframe to California
+California_data <- subset(bee_colony, State == "California")
+```
+
+Let's create a time series plot using the base R plot function. In this case, we'll use a line chart to show the trend over the years.
+
+```{r}
+plot(California_data$Year, California_data$Colony_n, type = "l", col = "blue",
+     xlab = "Year", 
+     ylab = "Number of Colonies",
+     main = "Trend in number of colonies over the years for California")
+```
+
+It doesn't look good. Let's enhance the plot by adding gridlines to make it more informative.
+
+```{r}
+plot(California_data$Year, California_data$Colony_n, type = "l", col = "blue",
+     xlab = "Year", 
+     ylab = "Number of Colonies",
+     main = "Trend in number of colonies over the years for California")
+
+grid() # Add gridlines
+```
+
+As we can see, California had maximum number of bee colonies (1400k) for the year 2015. In 2016, the number lowered to somewhere around 1200k and remained consistent with very little fluctuations for the three upcoming years 2017, 2018, and 2019. In 2020, there was an abrupt rise in the colonies and the number rose to approximately 1350k. The year 2021 saw a drop in the colonies and it lied around 1250k. This was the information regarding the higher values. If we look at the lows, we see fairly consistent trends ranging near 800k for the years 2015 and 2016. Furthermore, 2017-2020 also show similar trend in the lower values lying around 700k.
+
+## Visualization 2: ggplot2 Plot
+
+This time we will create a scatterplot to explore the relationship between colonies lost and colonies added. For ggplot2 to work, we have to install the ggplot2 package and load it.
+
+```{r}
+install.packages("ggplot2")
+library(ggplot2)
+```
+
+Create scatterplot of colonies lost against colonies added.
+
+```{r}
+ggplot(data = bee_colony, aes(x = Colony_lost, y = Colony_added)) +
+  geom_point() +
+  labs(title = "Scatterplot of colonies lost vs colonies added",           
+       x = "Colonies lost",
+       y = "Colonies added")
+```
+
+The scatterplot shows a week positive correlation between colonies added and the colonies lost. The correlation is week because the points do not follow a straight line and they are rather dispersed across the plot. It is a positive one because they follow the pattern in such a way that when one variable increases, the other one also tends to increase. This means that when the colony losses increase, the number of colonies added also increases. Although correlation does not mean causation, this is a positive sign for the bee keepers because they might have kept track of the colonies lost and added the colonies according to the losses occurred.
+
+## Visualization 3: Interactive Visualization
+
+For an interactive visualization, it is necessary to install the plotly package and load it as well.
+
+```{r}
+# install.packages("plotly")
+library(plotly)
+```
+
+Let's subset the dataset to include only the relevant variables for the interactive visualization:
+
+```{r}
+interactive_data <- bee_colony[, c("Year", "State", "Colony_reno")]
+```
+
+Now use the plot_ly( ) function from the plotly package to initialize the interactive plot. We will specify the data, variables for the x and y axes, and any other relevant information.
+
+```{r, eval=FALSE}
+interactive_plot <- plot_ly(data = interactive_data, 
+                            x = ~Year, 
+                            y = ~Colony_reno, 
+                            type = 'scatter',
+                            mode = 'markers',
+                            color = ~State,
+                            text = ~paste("State: ", State, "<br>Year: ", Year, "<br>Colonies Renovated: ", Colony_reno)) %>%
+  layout(title = "Colonies Renovated Across States and Years",
+         xaxis = list(title = "Year"),
+         yaxis = list(title = "Colonies Renovated"),
+         showlegend = TRUE)
+```
+
+This code creates a basic scatter plot with points colored by state. The text argument adds information to be displayed when hovering over points. There is a lot of room for improvement in the plot. Let's enhance it's interactivity by including features such as tooltips, hover effects, and animations.
+
+```{r, eval=FALSE}
+interactive_plot <- plot_ly(data = interactive_data, 
+                            x = ~Year, 
+                            y = ~Colony_reno, 
+                            type = 'scatter',
+                            mode = 'markers',
+                            color = ~State,
+                            text = ~paste("State: ", State, "<br>Year: ", Year, "<br>Colonies Renovated: ", Colony_reno),
+                            hoverinfo = "text",
+                            marker = list(size = 10)) %>%
+  layout(title = "Colonies Renovated Across States and Years",
+         xaxis = list(title = "Year"),
+         yaxis = list(title = "Colonies Renovated"),
+         showlegend = TRUE)
+```
+
+In this example, the hoverinfo argument is used to display custom information when hovering over points, and the marker argument adjusts the size of the markers. Now let's view the interactive plot.
+
+```{r, eval=FALSE}
+interactive_plot
+```
+
+If you hover over the interactive plot, you will see the information specific to the point you're having your cursor on. According to this plot, California, over the years, renovated the greatest number of colonies. It recovered 285k, 185k, 235k, 254k, 108k, 240k and 180k colonies for the years 2016, 2017, 2018, 2019, 2020 and 2021 respectively. The state of Texas came second in this category whereas North Dakota came in third in renovating the greatest number of colonies over the years. It won't be wrong to say that California was more actively involved in the recovery of bee colonies even during COVID years (2020 and 2021) because other states show a comparatively lower activity in this regard. The states which renovated the least number of colonies over the years were New Mexico (2015), Oklahoma (2016), Connecticut (2017), Maine (2018), Massachusetts (2019), New Jersey (2020), and Missouri (2021).
+
+## Visualization 4:
+
+Let's create a scatterplot to find out if there is any correlation between the number of colonies and maximum of colonies. We will use the plot( ) function in base R.
+
+```{r}
+plot(bee_colony$Colony_max, bee_colony$Colony_n, 
+     main = "Relationship between Number of colonies and Maximum colonies",
+     xlab = "Maximum colonies",
+     ylab = "Number of colonies",
+     col = "blue", pch = 16)
+```
+
+This looks a bit boring. Let's enhance the plot by adding tiles and other elements to make it more informative.
+
+```{r}
+plot(bee_colony$Colony_max, bee_colony$Colony_n, 
+     main = "Relationship between Number of colonies and Maximum colonies",
+     xlab = "Maximum colonies",
+     ylab = "Number of colonies",
+     col = "blue", pch = 16)
+
+# Add a regression line
+abline(lm(bee_colony$Colony_n ~ bee_colony$Colony_max), col = "red")
+
+# Add a legend
+legend("topleft", legend = "Regression Line", col = "red", lty = 1)
+
+# Customize plot appearance
+title(main = "Relationship between Number of colonies and Maximum colonies",
+      xlab = "Maximum colonies",
+      ylab = "Number of colonies")
+```
+
+This is much better because we can now clearly see the regression line. As we can see, there is a medium to strong positive and linear correlation between the maximum colonies and the number of colonies. This means that when the number of colonies increases, the maximum colonies also increases and vice versa. The relationship is strong because the data points lie close to the regression line and the deviations are quite low.
+
+## Visualization 5:
+
+This visualization will be carried out using ggplot2 for the distribution of colonies lost, added, and renovated over the years. Let's install and load the necessary packages first.
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+```
+
+Let's convert the data to tidy and long-format for effective use of ggplot2
+
+```{r}
+bee_colony_long <- bee_colony %>%
+  pivot_longer(cols = c(Colony_lost, Colony_added, Colony_reno),
+               names_to = "Action",
+               values_to = "Count")
+```
+
+Creating the stacked barchart
+
+```{r}
+ggplot(bee_colony_long, aes(x = Year, y = Count, fill = Action)) +
+  geom_bar(stat = "identity", position = "stack", color = "white") +
+  # Or use geom_area for an area plot
+  # geom_area(aes(group = Action, fill = Action), position = "stack", color = "white") +
+  labs(title = "Distribution of Colonies lost, added, and renovated over the years",
+       x = "Year", y = "Count") +
+  scale_fill_manual(values = c("Colony_lost" = "red", "Colony_added" = "green", "Colony_reno" = "blue")) +
+  theme_minimal()
+```
+
+It's looks fine but needs minor adjustments. Let's customize the appearance to make it more informative
+
+```{r}
+ggplot(bee_colony_long, aes(x = Year, y = Count, fill = Action)) +
+  geom_bar(stat = "identity", position = "stack", color = "white") +
+  # Or use geom_area for an area plot
+  # geom_area(aes(group = Action, fill = Action), position = "stack", color = "white") +
+  labs(title = "Distribution of Colonies lost, added, and renovated over the years",
+       x = "Year", y = "Count") +
+  scale_fill_manual(values = c("Colony_lost" = "red", "Colony_added" = "green", "Colony_reno" = "blue")) +
+  theme_minimal() +
+  labs(title = "Distribution of Colonies Lost, Added, and Renovated Over the Years",
+       name = "Action", labels = c("Colonies Lost", "Colonies Added", "Colonies Renovated")) +
+  theme_minimal() + 
+  theme(legend.position = "top") +
+  scale_y_continuous(labels = scales::comma_format(scale = 1e-3, suffix = "k"))
+```
+
+It's much better now because the y-axis figures are solid digits rather than scientific notation numbers. As we can see, the green bars represent the number of colonies which were added, the red ones show the colonies lost, and the blue ones give an idea of the number of colonies renovated over the years. This is a 7-year data and we see that 2015 was good start with robust number of colonies added. However, the it shows similar pattern for number of colonies lost and renovated as well. The year 2016 had high number of colonies added and it also lost a fair amount of colonies but it didn't see much renovations. The years 2017 and 2018 look almost similar with little differences in each action but the larger difference is in colony renovations. 2017 had slightly greater renovations than 2018 and lost less colonies. 2019 values were overall low but the number of lost colonies was comparatively greater than other parameters. The COVID years 2020 and 2021 had very big differences. It seems like in the start of the pandemic, all the parameters were fairly equal but in the next COVID year, lock downs were implemented due to which beekeepers added less, lost less due to less environment-challenging activities and less number of renovation, once again, due to COVID.
+
+## Visualization 6:
+
+For this visualization, we will use histogram to explore the distribution of one of the continuous variables in the dataset which is the percentage of colonies lost. We will use ggplot2 package to make it. The package ggplot2 is already loaded so we can execute the code for histogram directly.
+
+```{r}
+ggplot(bee_colony, aes(x = Colony_lost_pct)) +
+  geom_histogram(binwidth = 2, fill = "blue", color = "black", alpha = 0.7) +
+  labs(title = "Distribution of Colony Loss Percentages",
+       x = "Percentage of colonies lost (%)",
+       y = "Frequency")
+```
+
+This code sets up a histogram where each bar represents a range of percentage values ('binwidth = 5' specifies the width of each bin). The binwidth argument can be used to show the level of details in the histogram. The plot shows us the frequency of percentages of colonies lost. In each state, there was a certain percentage lost every year and here we can see that the most frequent percentage loss in the number of colonies is 10%, second to which is 5% and the third most frequent is 15% loss. It is not a normal distribution because the bars is not evenly distributed on both sides of the center. Therefore, we will call it skewed. It is right skewed distribution (positively skewed). If we talk about the modality of the data, so it's a multimodal which means it has multiple prominant peaks in the histogram. By changing the binwidth, we can clearly see the peaks.
+
+## Data Visualization Critique
+
+In this section, we are going to look at 2 examples of data visualization in which one will be a good visualization and the other will be bad and we'll briefly explain why.
+
+### The Good Visualization:
+
+Let's look at a good visualization below.
+
+![](images/Good%20Vis.PNG)
+
+#### Why is it a good one?
+
+This graph shows the results of antiradical activity of natural and semi-synthetic derivatives and positive control (done through antibiotics). The good features of this graph include clear x-axis (Derivative symbol) where VC is Vitamin C, RN is natural coumarin isolated from the seeds of Red Delicious apple, and GN is natural coumarin which is isolated from the seeds of Granny Smith apple. The well-defined title also makes the graph more clearer and informative. Last but not the least, a clear y-axis which shows . The key is also provided for the bars of the chart in which the blue bars represent the DPPH (2,2-diphenyl-1-picrylhydrazyl) free radicals and the red ones represent Hydroxyl (OH) free radicals. At the very first glance, the idea of the graph becomes clear in the mind of the
+
+### The Bad Visualization:
+
+Now, let's take a look at the bad one.
+
+![](images/Bad%20Vis.PNG)
+
+#### Why is it bad?
+
+The graph shows biochar effect on the chlorophyll content in broad bean (*Vicia faba*) plants affected by microplastics in soil. Different letters in each column indicate significant difference at p \< 0.05 (based on Duncan test) between treatments. There are many features which make it a bad visualization. The three annotations shows you a general idea of the bad features of the graph. First of all, the X-axis labels are not clearly defined. Even in the main article, they have described the abbreviations for MP (which means Microplastics) and BC (which means Biochar) only once. Secondly, no y-axis labels are given which makes it confusing for the readers and they have to go back and forth between the description and the graph to understand it. Thirdly, there is no title in the graph. Although a key/ legend is provided in the left bottom corner, the other features of the graph make it harder for the reader to understand the graph at the first glance.
+
+## References:
+
+-   Milman, O. (2019) "US beekeepers lost 40% of honeybee colonies over past year, survey finds," *The guardian*, 19 June. Available at: https://www.theguardian.com/environment/2019/jun/19/us-beekeepers-lost-40-of-honeybee-colonies-over-past-year-survey-finds (Accessed: March 7, 2024).
+
+-   *United States honey bee colony losses 2020-2021: Preliminary results* (June, 2021) *Beeinformed.org*. Available at: https://beeinformed.org/2021/06/21/united-states-honey-bee-colony-losses-2020-2021-preliminary-results/ (Accessed: March 6, 2024).
+
+-   *How to interpret histograms* (July 6, 2021) *Labxchange.org*. Available at: https://www.labxchange.org/library/items/lb:LabXchange:10d3270e:html:1 (Accessed: March 7, 2024).
+
+-   Wickham, H. (2009) *Ggplot2: Elegant graphics for data analysis*. New York, NY: Springer New York.
+
+-   Elbasiouny, H. *et al.* (2023a) "Potential effect of biochar on soil properties, microbial activity and Vicia faba properties affected by microplastics contamination," *Agronomy (Basel, Switzerland)*, 13(1), p. 149. doi: 10.3390/agronomy13010149.
+
+-   Fakri Mustafa, Y., Riyadh Khalil, R., Tareq Mohammed, E., Bashir, M. K., Khudhayer Oglah, M. (2021). 'Effects of Structural Manipulation on the Bioactivity of some Coumarin-Based Products', *Archives of Razi Institute*, 76(5), pp. 1297-1305. doi: 10.22092/ari.2021.356100.1776
